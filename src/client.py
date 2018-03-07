@@ -19,12 +19,13 @@ else:
 		
 		#Send data to server
 		for line in content:
-			line = line.split(" ")
-			socket.send(line)
+			socket.send(line+'\n')
 		
 		#Receive terminating messaage from server
 		st = socket.recv(100)
 		print st
+		
+		#Close socket
 		socket.close()
 		exit(0)
 	except Exception as e:
