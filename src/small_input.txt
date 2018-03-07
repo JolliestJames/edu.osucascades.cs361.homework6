@@ -1,2 +1,2 @@
-James credit $2
-James debit $1
+James credit $1
+James debit $2

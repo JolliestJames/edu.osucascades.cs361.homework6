@@ -14,6 +14,7 @@ else:
 			content = file.readlines()
 			content = [x.strip() for x in content]
 			
+		#Create socket and connect to server
 		socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		socket.connect(('127.0.0.1', int(port)))
 		
@@ -23,7 +24,7 @@ else:
 		
 		#Receive terminating messaage from server
 		st = socket.recv(100)
-		print st
+		# print st
 		
 		#Close socket
 		socket.close()

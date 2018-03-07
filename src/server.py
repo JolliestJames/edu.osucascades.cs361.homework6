@@ -9,42 +9,49 @@ threads = []
 
 def signal_handler(signal, frame):
 	print "\nJoining threads... "
+	#Join every thread in list
 	for thread in threads:
 		thread.join()
-	#write sorted data to log.txt
-	# print "Writing data to log.txt"
+	print "Writing data to log.txt"
 	writeToFile()
 	exit(0)
 	
 def writeToFile():
-	keylist = accounts.keys()
-	keylist.sort()
-	for name in accounts:
-		print name + " " + str(accounts[name])
+	#Open file to write
+	file = open("log.txt", "w+")
+	names = accounts.keys()
+	names.sort()
+	#Write each account name and balance to file
+	for name in names:
+		file.write(name + " $" + str(accounts[name]) + "\n")
+	file.close()
 	
-def adjust_accounts(data):
+def adjustAccounts(data):
+	#Operate on each transaction
 	for line in data:
 		line = line.split(' ')
-		#Operate on data
+		#Add to balance
 		if line[1] == "credit":
 			if line[0] in accounts.keys():
 				accounts[line[0]] += int(line[2][1:len(line[2])])
 			else:
 				accounts[line[0]] = int(line[2][1:len(line[2])])
+		#Subtract from balance
 		elif line[1] == "debit":
 			if line[0] in accounts.keys():
 				accounts[line[0]] -= int(line[2][1:len(line[2])])
 			else:
 				accounts[line[0]] = -int(line[2][1:len(line[2])])
 	
-def handle_socket(socket):
+def handleSocket(socket):
 	#Receive data
 	data = socket.recv(4096)
 	#Split data up by entries to work on
 	data = data.split('\n')
 	#Remove last line
 	data = data[:len(data)-1]
-	adjust_accounts(data)		
+	#Operate transactions
+	adjustAccounts(data)		
 	#Send response and close the socket
 	socket.send('OK')
 	socket.close()
@@ -57,18 +64,23 @@ if len(sys.argv) < 2:
 else: 
 	try:
 		port = sys.argv[1]
+		#Create socket
 		socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		#Bind socket to local host on port provided by user
 		socket.bind(('127.0.0.1', int(port)))
-		socket.listen(5)
+		#Handle up to 5 clients at a time
+		socket.listen(50)
 	
 		while True:
 			#Accept client connection
 			(client_socket, address) = socket.accept()
-			t = threading.Thread(target = handle_socket, args=(client_socket,))
+			#Create thread and add to list
+			t = threading.Thread(target = handleSocket, args=(client_socket,))
 			threads.append(t)
+			#Begin thread for handling transactions
 			t.start()
-			
-	except  Exception as e:
+
+	#Error handling
+	except Exception as e:
 		print e
 		exit(1)
-		
