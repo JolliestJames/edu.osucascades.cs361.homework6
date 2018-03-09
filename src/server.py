@@ -6,6 +6,7 @@ import sys
 
 accounts = {}
 threads = []
+lock = threading.Lock()
 
 def signal_handler(signal, frame):
 	print "\nJoining threads... "
@@ -26,34 +27,50 @@ def writeToFile():
 		file.write(name + " $" + str(accounts[name]) + "\n")
 	file.close()
 	
-def adjustAccounts(data):
+def adjustAccounts(transactions):
 	#Operate on each transaction
-	for line in data:
-		line = line.split(' ')
-		#Add to balance
-		if line[1] == "credit":
-			if line[0] in accounts.keys():
-				accounts[line[0]] += int(line[2][1:len(line[2])])
-			else:
-				accounts[line[0]] = int(line[2][1:len(line[2])])
-		#Subtract from balance
-		elif line[1] == "debit":
-			if line[0] in accounts.keys():
-				accounts[line[0]] -= int(line[2][1:len(line[2])])
-			else:
-				accounts[line[0]] = -int(line[2][1:len(line[2])])
+	for t in transactions:
+		t = t.split(' ')
+		#Acquire lock on accounts for performing operations
+		lock.acquire()
+		try:
+			if t[1] == "credit":
+				#Add to balance
+				if t[0] in accounts.keys():
+						accounts[t[0]] += int(t[2][1:len(t[2])])
+				else:
+					accounts[t[0]] = int(t[2][1:len(t[2])])
+			elif t[1] == "debit":
+				#Subtract from balance
+				if t[0] in accounts.keys():
+					accounts[t[0]] -= int(t[2][1:len(t[2])])
+				else:
+					accounts[t[0]] = -int(t[2][1:len(t[t2])])
+		finally:
+			#Let go of lock so other threads can operate
+			lock.release()
 	
 def handleSocket(socket):
-	#Receive data
-	data = socket.recv(4096)
-	#Split data up by entries to work on
-	data = data.split('\n')
-	#Remove last line
-	data = data[:len(data)-1]
-	#Operate transactions
-	adjustAccounts(data)		
-	#Send response and close the socket
-	socket.send('OK')
+
+	#Initialize list for storing transactions to adjust accounts
+	transactions = []
+	
+	#Store each transaction in a string
+	transaction = ''
+	
+	while True:
+		#Receive transactions until the client sends one of length zero
+		transaction = socket.recv(1024)
+		if len(transaction) is 0:
+			#Let client know it can exit its send loop
+			socket.send('OK')
+			break
+		else:
+			#Add transaction to list 
+			transactions.append(transaction)
+			socket.send('OK')
+
+	adjustAccounts(transactions)
 	socket.close()
 	
 #Initialize listener for signal interrupt
@@ -69,7 +86,7 @@ else:
 		#Bind socket to local host on port provided by user
 		socket.bind(('127.0.0.1', int(port)))
 		#Handle up to 5 clients at a time
-		socket.listen(50)
+		socket.listen(1000)
 	
 		while True:
 			#Accept client connection

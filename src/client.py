@@ -18,13 +18,13 @@ else:
 		socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		socket.connect(('127.0.0.1', int(port)))
 		
-		#Send data to server
+		#Send data to server one line at a time
 		for line in content:
-			socket.send(line+'\n')
+			socket.send(line)
+			#Wait for server to respond before sending another line
+			st = socket.recv(100)
 		
-		#Receive terminating messaage from server
-		st = socket.recv(100)
-		# print st
+		#Receive terminating message from server
 		
 		#Close socket
 		socket.close()
