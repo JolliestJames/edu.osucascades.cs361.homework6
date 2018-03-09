@@ -4,6 +4,7 @@ import threading
 import signal
 import sys
 
+#Initialize global variables
 accounts = {}
 threads = []
 lock = threading.Lock()
@@ -68,6 +69,7 @@ def handleSocket(socket):
 		else:
 			#Add transaction to list 
 			transactions.append(transaction)
+			#Let client know it can send another transaction
 			socket.send('OK')
 
 	adjustAccounts(transactions)
@@ -80,12 +82,13 @@ if len(sys.argv) < 2:
 	print "usage: ./server.py port"
 else: 
 	try:
+		#Set port
 		port = sys.argv[1]
 		#Create socket
 		socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		#Bind socket to local host on port provided by user
 		socket.bind(('127.0.0.1', int(port)))
-		#Handle up to 5 clients at a time
+		#Handle up to 1000 clients at a time
 		socket.listen(1000)
 	
 		while True:

@@ -11,7 +11,9 @@ else:
 	
 	try:
 		with open(inputFile) as file:
+			#Parse file into lines
 			content = file.readlines()
+			#Remove unncessary characters
 			content = [x.strip() for x in content]
 			
 		#Create socket and connect to server
